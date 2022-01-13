@@ -10,6 +10,8 @@ import {
 import { User as UserModel } from '@prisma/client';
 import { UserService } from './user.service';
 import bcrypt from 'bcrypt';
+import { CreateUserDTO } from './create-user.dto';
+import { UpdateUserDTO } from './update-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -26,26 +28,30 @@ export class UsersController {
   }
 
   @Post()
-  async createUser(
-    @Body() data: { name: string; email: string; password: string },
-  ): Promise<UserModel> {
-    const { password } = data;
+  async createUser(@Body() createUserDto: CreateUserDTO): Promise<UserModel> {
+    const { password } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
-    return this.userService.createUser({ ...data, password: hashedPassword });
+    return this.userService.createUser({
+      ...createUserDto,
+      password: hashedPassword,
+    });
   }
 
   @Put(':id')
   async updateUser(
-    @Body() data: { name?: string; email?: string; password?: string },
+    @Body() updateUserDto: UpdateUserDTO,
     @Param('id') id: string,
   ): Promise<UserModel> {
-    if (!data.password) {
-      return this.userService.updateUser({ where: { id }, data });
+    if (!updateUserDto.password) {
+      return this.userService.updateUser({
+        where: { id },
+        data: updateUserDto,
+      });
     }
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
     return this.userService.updateUser({
       where: { id },
-      data: { ...data, password: hashedPassword },
+      data: { ...updateUserDto, password: hashedPassword },
     });
   }
 

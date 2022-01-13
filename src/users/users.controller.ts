@@ -10,8 +10,8 @@ import {
 import { User as UserModel } from '@prisma/client';
 import { UserService } from './user.service';
 import * as bcrypt from 'bcrypt';
-import { CreateUserDTO } from './create-user.dto';
-import { UpdateUserDTO } from './update-user.dto';
+import { CreateUserDTO } from './dto/create-user.dto';
+import { UpdateUserDTO } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {

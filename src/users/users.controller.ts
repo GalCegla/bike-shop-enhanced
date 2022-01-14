@@ -12,22 +12,34 @@ import { UserService } from './user.service';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDTO } from './dto/update-user.dto';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 @Controller('users')
 export class UsersController {
   constructor(private userService: UserService) {}
 
   @Get(':id')
+  @ApiOkResponse({ description: 'Get a user with an ID' })
   async getUserById(@Param('id') id: string): Promise<UserModel> {
     return this.userService.user({ id });
   }
 
   @Get()
+  @ApiOkResponse({ description: 'Get all users' })
+  @ApiBearerAuth()
   async getAllUsers(): Promise<UserModel[]> {
     return this.userService.users({});
   }
 
   @Post()
+  @ApiCreatedResponse({ description: 'Create a user' })
+  @ApiBody({ type: CreateUserDTO })
   async createUser(@Body() createUserDto: CreateUserDTO): Promise<UserModel> {
     const { password } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -38,6 +50,8 @@ export class UsersController {
   }
 
   @Put(':id')
+  @ApiOkResponse({ description: 'Update a user using a user ID' })
+  @ApiBody({ type: UpdateUserDTO })
   async updateUser(
     @Body() updateUserDto: UpdateUserDTO,
     @Param('id') id: string,
@@ -56,6 +70,8 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @ApiOkResponse({ description: 'Delete a user using a user ID' })
+  @ApiBearerAuth()
   async deleteUser(@Param('id') id: string): Promise<UserModel> {
     return this.userService.deleteUser({ id });
   }

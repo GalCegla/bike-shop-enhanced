@@ -17,7 +17,6 @@ import {
   ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
-  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 @Controller('users')

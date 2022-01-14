@@ -8,7 +8,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { Bike as BikeModel, ContractType, Prisma } from '@prisma/client';
+import { Bike as BikeModel, Prisma } from '@prisma/client';
 import { Rental as RentalModel } from '@prisma/client';
 import { BikeService } from './bike.service';
 import { CreateBikeDTO } from './dto/create-bike.dto';

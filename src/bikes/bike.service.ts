@@ -67,7 +67,7 @@ export class BikeService {
       take: 1,
     });
     const rental = rentalArray[0];
-    if (!rental.returnedAt) {
+    if (rental.returnedAt) {
       throw new BadRequestException(
         'This rental is over, the bike was already returned.',
       );
@@ -78,21 +78,7 @@ export class BikeService {
     }
 
     const now = new Date();
-    let bill: number;
-    switch (rental.contractType) {
-      case ContractType.HOUR:
-        bill =
-          Math.ceil(moment(now).diff(moment(rental.createdAt), 'hours')) * 20;
-        break;
-      case ContractType.DAY:
-        bill =
-          Math.ceil(moment(now).diff(moment(rental.createdAt), 'days')) * 50;
-        break;
-      case ContractType.WEEK:
-        bill =
-          Math.ceil(moment(now).diff(moment(rental.createdAt), 'weeks')) * 100;
-        break;
-    }
+    const bill = billCalculator(now, rental.createdAt, rental.contractType);
 
     await this.updateBike({
       where: { id: bikeId },
@@ -106,4 +92,35 @@ export class BikeService {
       },
     });
   }
+}
+
+function billCalculator(
+  returnDate: Date,
+  rentalDate: Date,
+  contractType: ContractType,
+) {
+  let type: 'hours' | 'days' | 'weeks';
+  let perUnit: number;
+  switch (contractType) {
+    case ContractType.HOUR:
+      type = 'hours';
+      perUnit = 20;
+      break;
+    case ContractType.DAY:
+      type = 'days';
+      perUnit = 50;
+      break;
+    case ContractType.WEEK:
+      type = 'weeks';
+      perUnit = 100;
+      break;
+  }
+  let bill =
+    Math.ceil(moment(returnDate).diff(moment(rentalDate), type)) * perUnit;
+
+  if (!bill) {
+    bill = perUnit;
+  }
+
+  return bill;
 }

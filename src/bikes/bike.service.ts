@@ -1,8 +1,13 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Bike, ContractType, Prisma, Rental } from '@prisma/client';
 import { RentalService } from 'src/rentals/rental.service';
 import { PrismaService } from '../prisma.service';
 import * as moment from 'moment';
+import isEmpty from 'lodash/isEmpty';
 
 @Injectable()
 export class BikeService {
@@ -13,8 +18,14 @@ export class BikeService {
 
   async bike(
     bikeWhereUniqueInput: Prisma.BikeWhereUniqueInput,
-  ): Promise<Bike | null> {
-    return this.prisma.bike.findUnique({ where: bikeWhereUniqueInput });
+  ): Promise<Bike | NotFoundException> {
+    const bike = await this.prisma.bike.findUnique({
+      where: bikeWhereUniqueInput,
+    });
+    if (!bike) {
+      throw new NotFoundException('Bike not found.');
+    }
+    return bike;
   }
 
   async bikes(params: {
@@ -34,8 +45,13 @@ export class BikeService {
   async updateBike(params: {
     where: Prisma.BikeWhereUniqueInput;
     data: Prisma.BikeUpdateInput;
-  }): Promise<Bike> {
-    return this.prisma.bike.update({ ...params });
+  }): Promise<Bike | NotFoundException> {
+    try {
+      const bike = await this.prisma.bike.update({ ...params });
+      return bike;
+    } catch (error) {
+      throw new NotFoundException('Bike not found.');
+    }
   }
 
   async deleteBike(where: Prisma.BikeWhereUniqueInput): Promise<Bike> {
@@ -46,6 +62,9 @@ export class BikeService {
     rentalData: Prisma.RentalCreateInput,
   ): Promise<Rental | BadRequestException> {
     const bike = await this.bike({ id: rentalData.bike.connect.id });
+    if (bike instanceof NotFoundException) {
+      throw new NotFoundException(bike.message);
+    }
     if (bike.isRented) {
       throw new BadRequestException('Bike is already rented.');
     }
@@ -56,8 +75,14 @@ export class BikeService {
     return this.rentalService.createRental(rentalData);
   }
 
-  async returnBike(bikeId: string, userId: string): Promise<Rental> {
+  async returnBike(
+    bikeId: string,
+    userId: string,
+  ): Promise<Rental | BadRequestException | NotFoundException> {
     const bike = await this.bike({ id: bikeId });
+    if (bike instanceof NotFoundException) {
+      throw new NotFoundException(bike.message);
+    }
     if (!bike.isRented) {
       throw new BadRequestException('Bike is not rented.');
     }
@@ -66,6 +91,9 @@ export class BikeService {
       orderBy: { createdAt: 'desc' },
       take: 1,
     });
+    if (isEmpty(rentalArray)) {
+      throw new NotFoundException('No rentals associated with bikes found.');
+    }
     const rental = rentalArray[0];
     if (rental.returnedAt) {
       throw new BadRequestException(
@@ -80,17 +108,22 @@ export class BikeService {
     const now = new Date();
     const bill = billCalculator(now, rental.createdAt, rental.contractType);
 
-    await this.updateBike({
-      where: { id: bikeId },
-      data: { isRented: false },
-    });
-    return this.rentalService.updateRental({
-      where: { id: rental.id },
-      data: {
-        returnedAt: now,
-        bill,
-      },
-    });
+    try {
+      await this.updateBike({
+        where: { id: bikeId },
+        data: { isRented: false },
+      });
+      const updatedRental = await this.rentalService.updateRental({
+        where: { id: rental.id },
+        data: {
+          returnedAt: now,
+          bill,
+        },
+      });
+      return updatedRental;
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 }
 

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -23,7 +24,9 @@ export class BikesController {
 
   @Get(':id')
   @ApiOkResponse({ description: 'Get a bike with a bike ID' })
-  async getBikeById(@Param('id') id: string): Promise<BikeModel> {
+  async getBikeById(
+    @Param('id') id: string,
+  ): Promise<BikeModel | NotFoundException> {
     return this.bikeService.bike({ id });
   }
 
@@ -47,7 +50,7 @@ export class BikesController {
   async updateBike(
     @Body() updateBikeDto: UpdateBikeDTO,
     @Param('id') id: string,
-  ): Promise<BikeModel> {
+  ): Promise<BikeModel | NotFoundException> {
     return this.bikeService.updateBike({ where: { id }, data: updateBikeDto });
   }
 
@@ -77,7 +80,7 @@ export class BikesController {
   async returnBike(
     @Param('id') id: string,
     @Body() returnBikeDto: ReturnBikeDTO,
-  ): Promise<RentalModel | BadRequestException> {
+  ): Promise<RentalModel | BadRequestException | NotFoundException> {
     return this.bikeService.returnBike(id, returnBikeDto.userId);
   }
 }

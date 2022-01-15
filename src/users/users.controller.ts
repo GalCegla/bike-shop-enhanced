@@ -13,10 +13,12 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDTO } from './dto/update-user.dto';
 import {
+  ApiBasicAuth,
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 @Controller('users')
@@ -30,8 +32,9 @@ export class UsersController {
   }
 
   @Get()
+  @ApiBasicAuth()
   @ApiOkResponse({ description: 'Get all users' })
-  @ApiBearerAuth()
+  @ApiUnauthorizedResponse()
   async getAllUsers(): Promise<UserModel[]> {
     return this.userService.users({});
   }
@@ -69,8 +72,9 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @ApiBearerAuth('access-token')
   @ApiOkResponse({ description: 'Delete a user using a user ID' })
-  @ApiBearerAuth()
+  @ApiUnauthorizedResponse()
   async deleteUser(@Param('id') id: string): Promise<UserModel> {
     return this.userService.deleteUser({ id });
   }

@@ -8,7 +8,7 @@ export class UserService {
 
   async user(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
-  ): Promise<User | null> {
+  ): Promise<User | NotFoundException> {
     const user = await this.prisma.user.findUnique({
       where: userWhereUniqueInput,
     });
@@ -37,7 +37,7 @@ export class UserService {
   async updateUser(params: {
     where: Prisma.UserWhereUniqueInput;
     data: Prisma.UserUpdateInput;
-  }): Promise<User> {
+  }): Promise<User | NotFoundException> {
     try {
       const user = await this.prisma.user.update({ ...params });
       return user;
@@ -46,7 +46,9 @@ export class UserService {
     }
   }
 
-  async deleteUser(where: Prisma.UserWhereUniqueInput): Promise<User> {
+  async deleteUser(
+    where: Prisma.UserWhereUniqueInput,
+  ): Promise<User | NotFoundException> {
     try {
       const user = await this.prisma.user.delete({ where });
       return user;

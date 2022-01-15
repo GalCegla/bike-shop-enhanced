@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -27,7 +28,9 @@ export class UsersController {
 
   @Get(':id')
   @ApiOkResponse({ description: 'Get a user with an ID' })
-  async getUserById(@Param('id') id: string): Promise<UserModel> {
+  async getUserById(
+    @Param('id') id: string,
+  ): Promise<UserModel | NotFoundException> {
     return this.userService.user({ id });
   }
 
@@ -57,7 +60,7 @@ export class UsersController {
   async updateUser(
     @Body() updateUserDto: UpdateUserDTO,
     @Param('id') id: string,
-  ): Promise<UserModel> {
+  ): Promise<UserModel | NotFoundException> {
     if (!updateUserDto.password) {
       return this.userService.updateUser({
         where: { id },
@@ -75,7 +78,9 @@ export class UsersController {
   @ApiBearerAuth('access-token')
   @ApiOkResponse({ description: 'Delete a user using a user ID' })
   @ApiUnauthorizedResponse()
-  async deleteUser(@Param('id') id: string): Promise<UserModel> {
+  async deleteUser(
+    @Param('id') id: string,
+  ): Promise<UserModel | NotFoundException> {
     return this.userService.deleteUser({ id });
   }
 }

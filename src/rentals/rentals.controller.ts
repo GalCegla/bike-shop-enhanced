@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Put,
+} from '@nestjs/common';
 import { RentalService } from './rental.service';
 import { Rental as RentalModel } from '@prisma/client';
 import { UpdateRentalDTO } from './dto/update-rental.dto';
@@ -11,7 +19,9 @@ export class RentalsController {
 
   @Get(':id')
   @ApiOkResponse({ description: 'Get a rental with an ID' })
-  async getRentalById(@Param('id') id: string): Promise<RentalModel> {
+  async getRentalById(
+    @Param('id') id: string,
+  ): Promise<RentalModel | NotFoundException> {
     return this.rentalService.rental({ id });
   }
 
@@ -36,7 +46,9 @@ export class RentalsController {
 
   @Delete(':id')
   @ApiOkResponse({ description: 'Delete a rental using a rental ID' })
-  async deleteRental(@Param('id') id: string): Promise<RentalModel> {
+  async deleteRental(
+    @Param('id') id: string,
+  ): Promise<RentalModel | NotFoundException> {
     return this.rentalService.deleteRental({ id });
   }
 }

@@ -7,7 +7,7 @@ import { Bike, ContractType, Prisma, Rental } from '@prisma/client';
 import { RentalService } from 'src/rentals/rental.service';
 import { PrismaService } from '../prisma.service';
 import * as moment from 'moment';
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty } from 'lodash';
 
 @Injectable()
 export class BikeService {

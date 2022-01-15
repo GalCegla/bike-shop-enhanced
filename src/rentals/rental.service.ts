@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Rental, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 
@@ -9,7 +9,13 @@ export class RentalService {
   async rental(
     rentalWhereUniqueInput: Prisma.RentalWhereUniqueInput,
   ): Promise<Rental | null> {
-    return this.prisma.rental.findUnique({ where: rentalWhereUniqueInput });
+    const rental = await this.prisma.rental.findUnique({
+      where: rentalWhereUniqueInput,
+    });
+    if (!rental) {
+      throw new NotFoundException('Rental not found.');
+    }
+    return rental;
   }
 
   async rentals(params: {
@@ -30,10 +36,20 @@ export class RentalService {
     where: Prisma.RentalWhereUniqueInput;
     data: Prisma.RentalUpdateInput;
   }): Promise<Rental> {
-    return this.prisma.rental.update({ ...params });
+    try {
+      const rental = await this.prisma.rental.update({ ...params });
+      return rental;
+    } catch (error) {
+      throw new NotFoundException('Rental not found.');
+    }
   }
 
   async deleteRental(where: Prisma.RentalWhereUniqueInput): Promise<Rental> {
-    return this.prisma.rental.delete({ where });
+    try {
+      const rental = await this.prisma.rental.delete({ where });
+      return rental;
+    } catch (error) {
+      throw new NotFoundException('Rental not found.');
+    }
   }
 }

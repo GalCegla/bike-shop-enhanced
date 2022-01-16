@@ -8,12 +8,12 @@ export class RentalService {
 
   async rental(
     rentalWhereUniqueInput: Prisma.RentalWhereUniqueInput,
-  ): Promise<Rental | NotFoundException> {
+  ): Promise<Rental | null> {
     const rental = await this.prisma.rental.findUnique({
       where: rentalWhereUniqueInput,
     });
     if (!rental) {
-      throw new NotFoundException('Rental not found.');
+      return null;
     }
     return rental;
   }
@@ -35,23 +35,11 @@ export class RentalService {
   async updateRental(params: {
     where: Prisma.RentalWhereUniqueInput;
     data: Prisma.RentalUpdateInput;
-  }): Promise<Rental | NotFoundException> {
-    try {
-      const rental = await this.prisma.rental.update({ ...params });
-      return rental;
-    } catch (error) {
-      throw new NotFoundException('Rental not found.');
-    }
+  }): Promise<Rental> {
+    return this.prisma.rental.update({ ...params });
   }
 
-  async deleteRental(
-    where: Prisma.RentalWhereUniqueInput,
-  ): Promise<Rental | NotFoundException> {
-    try {
-      const rental = await this.prisma.rental.delete({ where });
-      return rental;
-    } catch (error) {
-      throw new NotFoundException('Rental not found.');
-    }
+  async deleteRental(where: Prisma.RentalWhereUniqueInput): Promise<Rental> {
+    return this.prisma.rental.delete({ where });
   }
 }

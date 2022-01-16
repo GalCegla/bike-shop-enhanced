@@ -22,7 +22,11 @@ export class RentalsController {
   async getRentalById(
     @Param('id') id: string,
   ): Promise<RentalModel | NotFoundException> {
-    return this.rentalService.rental({ id });
+    const rental = await this.rentalService.rental({ id });
+    if (!rental) {
+      throw new NotFoundException('Rental not found.');
+    }
+    return rental;
   }
 
   @Get()
@@ -37,7 +41,12 @@ export class RentalsController {
   async updateRental(
     @Param('id') id: string,
     @Body() updateRentalDto: UpdateRentalDTO,
-  ) {
+  ): Promise<RentalModel | NotFoundException> {
+    const rental = await this.rentalService.rental({ id });
+    if (!rental) {
+      throw new NotFoundException('Rental not found.');
+    }
+
     return this.rentalService.updateRental({
       where: { id },
       data: updateRentalDto,
@@ -49,6 +58,11 @@ export class RentalsController {
   async deleteRental(
     @Param('id') id: string,
   ): Promise<RentalModel | NotFoundException> {
+    const rental = await this.rentalService.rental({ id });
+    if (!rental) {
+      throw new NotFoundException('Rental not found.');
+    }
+
     return this.rentalService.deleteRental({ id });
   }
 }

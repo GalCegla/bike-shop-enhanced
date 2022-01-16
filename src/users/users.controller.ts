@@ -31,7 +31,11 @@ export class UsersController {
   async getUserById(
     @Param('id') id: string,
   ): Promise<UserModel | NotFoundException> {
-    return this.userService.user({ id });
+    const user = await this.userService.user({ id });
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+    return user;
   }
 
   @Get()
@@ -61,6 +65,10 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDTO,
     @Param('id') id: string,
   ): Promise<UserModel | NotFoundException> {
+    const user = await this.userService.user({ id });
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
     if (!updateUserDto.password) {
       return this.userService.updateUser({
         where: { id },
@@ -81,6 +89,10 @@ export class UsersController {
   async deleteUser(
     @Param('id') id: string,
   ): Promise<UserModel | NotFoundException> {
+    const user = await this.userService.user({ id });
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
     return this.userService.deleteUser({ id });
   }
 }

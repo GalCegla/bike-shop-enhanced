@@ -8,12 +8,12 @@ export class UserService {
 
   async user(
     userWhereUniqueInput: Prisma.UserWhereUniqueInput,
-  ): Promise<User | NotFoundException> {
+  ): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: userWhereUniqueInput,
     });
     if (!user) {
-      throw new NotFoundException('User not found.');
+      return null;
     }
     return user;
   }
@@ -37,23 +37,11 @@ export class UserService {
   async updateUser(params: {
     where: Prisma.UserWhereUniqueInput;
     data: Prisma.UserUpdateInput;
-  }): Promise<User | NotFoundException> {
-    try {
-      const user = await this.prisma.user.update({ ...params });
-      return user;
-    } catch (error) {
-      throw new NotFoundException('User not found.');
-    }
+  }): Promise<User> {
+    return this.prisma.user.update({ ...params });
   }
 
-  async deleteUser(
-    where: Prisma.UserWhereUniqueInput,
-  ): Promise<User | NotFoundException> {
-    try {
-      const user = await this.prisma.user.delete({ where });
-      return user;
-    } catch (error) {
-      throw new NotFoundException('User not found.');
-    }
+  async deleteUser(where: Prisma.UserWhereUniqueInput): Promise<User> {
+    return this.prisma.user.delete({ where });
   }
 }

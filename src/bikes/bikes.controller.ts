@@ -12,6 +12,8 @@ import {
 import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { Bike as BikeModel, Prisma } from '@prisma/client';
 import { Rental as RentalModel } from '@prisma/client';
+import { isEmpty } from 'lodash';
+import { RentalService } from 'src/rentals/rental.service';
 import { BikeService } from './bike.service';
 import { CreateBikeDTO } from './dto/create-bike.dto';
 import { RentBikeDTO } from './dto/rent-bike.dto';
@@ -20,14 +22,21 @@ import { UpdateBikeDTO } from './dto/update-bike.dto';
 
 @Controller('bikes')
 export class BikesController {
-  constructor(private bikeService: BikeService) {}
+  constructor(
+    private bikeService: BikeService,
+    private rentalService: RentalService,
+  ) {}
 
   @Get(':id')
   @ApiOkResponse({ description: 'Get a bike with a bike ID' })
   async getBikeById(
     @Param('id') id: string,
   ): Promise<BikeModel | NotFoundException> {
-    return this.bikeService.bike({ id });
+    const bike = await this.bikeService.bike({ id });
+    if (!bike) {
+      throw new NotFoundException('Bike not found.');
+    }
+    return bike;
   }
 
   @Get()
@@ -51,6 +60,11 @@ export class BikesController {
     @Body() updateBikeDto: UpdateBikeDTO,
     @Param('id') id: string,
   ): Promise<BikeModel | NotFoundException> {
+    const bike = await this.bikeService.bike({ id });
+    if (!bike) {
+      throw new NotFoundException('Bike not found.');
+    }
+
     return this.bikeService.updateBike({ where: { id }, data: updateBikeDto });
   }
 
@@ -58,6 +72,11 @@ export class BikesController {
   @ApiOkResponse({ description: 'Delete a bike using a bike ID' })
   @ApiBearerAuth()
   async deleteBike(@Param('id') id: string): Promise<BikeModel> {
+    const bike = await this.bikeService.bike({ id });
+    if (!bike) {
+      throw new NotFoundException('Bike not found.');
+    }
+
     return this.bikeService.deleteBike({ id });
   }
 
@@ -66,7 +85,14 @@ export class BikesController {
   async rentBike(
     @Body() rentBikeDto: RentBikeDTO,
     @Param('id') id: string,
-  ): Promise<RentalModel | BadRequestException> {
+  ): Promise<RentalModel | BadRequestException | NotFoundException> {
+    const bike = await this.bikeService.bike({ id });
+    if (!bike) {
+      throw new NotFoundException('Bike not found.');
+    }
+    if (bike.isRented) {
+      throw new BadRequestException('Bike is already rented.');
+    }
     const data: Prisma.RentalCreateInput = {
       bike: { connect: { id } },
       contractType: rentBikeDto.contractType,
@@ -81,6 +107,34 @@ export class BikesController {
     @Param('id') id: string,
     @Body() returnBikeDto: ReturnBikeDTO,
   ): Promise<RentalModel | BadRequestException | NotFoundException> {
-    return this.bikeService.returnBike(id, returnBikeDto.userId);
+    const bike = await this.bikeService.bike({ id });
+    if (!bike) {
+      throw new NotFoundException('Bike not found.');
+    }
+    if (!bike.isRented) {
+      throw new BadRequestException('Bike is not rented.');
+    }
+
+    const rentalArray = await this.rentalService.rentals({
+      where: { bikeId: bike.id },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+    });
+
+    if (isEmpty(rentalArray)) {
+      throw new NotFoundException('No rentals associated with bikes found.');
+    }
+    const rental = rentalArray[0];
+    if (rental.returnedAt) {
+      throw new BadRequestException(
+        'This rental is over, the bike was already returned.',
+      );
+    }
+
+    if (rental.userId !== returnBikeDto.userId) {
+      throw new BadRequestException('This is not your bike.');
+    }
+
+    return this.bikeService.returnBike(id, rental);
   }
 }

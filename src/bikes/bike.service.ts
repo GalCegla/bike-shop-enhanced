@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Bike, ContractType, Prisma, Rental } from '@prisma/client';
 import { RentalService } from 'src/rentals/rental.service';
 import { PrismaService } from '../prisma.service';
@@ -14,7 +14,13 @@ export class BikeService {
   async bike(
     bikeWhereUniqueInput: Prisma.BikeWhereUniqueInput,
   ): Promise<Bike | null> {
-    return this.prisma.bike.findUnique({ where: bikeWhereUniqueInput });
+    const bike = await this.prisma.bike.findUnique({
+      where: bikeWhereUniqueInput,
+    });
+    if (!bike) {
+      return null;
+    }
+    return bike;
   }
 
   async bikes(params: {
@@ -42,13 +48,7 @@ export class BikeService {
     return this.prisma.bike.delete({ where });
   }
 
-  async rentBike(
-    rentalData: Prisma.RentalCreateInput,
-  ): Promise<Rental | BadRequestException> {
-    const bike = await this.bike({ id: rentalData.bike.connect.id });
-    if (bike.isRented) {
-      throw new BadRequestException('Bike is already rented.');
-    }
+  async rentBike(rentalData: Prisma.RentalCreateInput): Promise<Rental> {
     await this.updateBike({
       where: { id: rentalData.bike.connect.id },
       data: { isRented: true },
@@ -56,27 +56,7 @@ export class BikeService {
     return this.rentalService.createRental(rentalData);
   }
 
-  async returnBike(bikeId: string, userId: string): Promise<Rental> {
-    const bike = await this.bike({ id: bikeId });
-    if (!bike.isRented) {
-      throw new BadRequestException('Bike is not rented.');
-    }
-    const rentalArray = await this.rentalService.rentals({
-      where: { bikeId: bike.id },
-      orderBy: { createdAt: 'desc' },
-      take: 1,
-    });
-    const rental = rentalArray[0];
-    if (rental.returnedAt) {
-      throw new BadRequestException(
-        'This rental is over, the bike was already returned.',
-      );
-    }
-
-    if (rental.userId !== userId) {
-      throw new BadRequestException('This is not your bike.');
-    }
-
+  async returnBike(bikeId: string, rental: Rental): Promise<Rental> {
     const now = new Date();
     const bill = billCalculator(now, rental.createdAt, rental.contractType);
 

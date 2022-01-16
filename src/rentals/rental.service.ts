@@ -9,7 +9,13 @@ export class RentalService {
   async rental(
     rentalWhereUniqueInput: Prisma.RentalWhereUniqueInput,
   ): Promise<Rental | null> {
-    return this.prisma.rental.findUnique({ where: rentalWhereUniqueInput });
+    const rental = await this.prisma.rental.findUnique({
+      where: rentalWhereUniqueInput,
+    });
+    if (!rental) {
+      return null;
+    }
+    return rental;
   }
 
   async rentals(params: {

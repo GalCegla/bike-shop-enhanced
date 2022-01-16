@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -27,8 +28,14 @@ export class UsersController {
 
   @Get(':id')
   @ApiOkResponse({ description: 'Get a user with an ID' })
-  async getUserById(@Param('id') id: string): Promise<UserModel> {
-    return this.userService.user({ id });
+  async getUserById(
+    @Param('id') id: string,
+  ): Promise<UserModel | NotFoundException> {
+    const user = await this.userService.user({ id });
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+    return user;
   }
 
   @Get()
@@ -57,7 +64,11 @@ export class UsersController {
   async updateUser(
     @Body() updateUserDto: UpdateUserDTO,
     @Param('id') id: string,
-  ): Promise<UserModel> {
+  ): Promise<UserModel | NotFoundException> {
+    const user = await this.userService.user({ id });
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
     if (!updateUserDto.password) {
       return this.userService.updateUser({
         where: { id },
@@ -75,7 +86,13 @@ export class UsersController {
   @ApiBearerAuth('access-token')
   @ApiOkResponse({ description: 'Delete a user using a user ID' })
   @ApiUnauthorizedResponse()
-  async deleteUser(@Param('id') id: string): Promise<UserModel> {
+  async deleteUser(
+    @Param('id') id: string,
+  ): Promise<UserModel | NotFoundException> {
+    const user = await this.userService.user({ id });
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
     return this.userService.deleteUser({ id });
   }
 }
